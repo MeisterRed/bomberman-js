@@ -12,7 +12,7 @@ var movement = {
 
 document.addEventListener('keydown', function(event) {
     switch (event.keyCode) {
-      case 65: // A
+      case 65: // A 
         movement.left = true;
         break;
       case 87: // W
