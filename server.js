@@ -54,11 +54,7 @@ io.on('connection', function(socket) {
         }
     });
     socket.on('disconnect', function() {
-        //players.splice(socket.id, 1);
-        players[socket.id] = {
-            x: -300,
-            y: -300
-        };
+        delete players[socket.id];
     });
 });
 
