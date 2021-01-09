@@ -23,14 +23,14 @@ server.listen(5000, function() {
 
 // Add the WebSocket handlers
 io.on('connection', function(socket) {
-
+    
 });
 
-setInterval(function() {
-    io.sockets.emit('message', 'hi!');
-}, 1000);
 
+// Initiate Game state object
 var players = {};
+
+
 io.on('connection', function(socket) {
     socket.on('new player',  function() {
         players[socket.id] = {
@@ -38,7 +38,7 @@ io.on('connection', function(socket) {
             y: 300
         };
     });
-    socket.on('movement', function(data) {
+    socket.on('player actions', function(data) {
         var player = players[socket.id] || {};
         if (data.left) {
             player.x -= 5;
