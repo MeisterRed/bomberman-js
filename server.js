@@ -53,6 +53,13 @@ io.on('connection', function(socket) {
             player.y += 5;
         }
     });
+    socket.on('disconnect', function() {
+        //players.splice(socket.id, 1);
+        players[socket.id] = {
+            x: -300,
+            y: -300
+        };
+    });
 });
 
 setInterval(function() {
