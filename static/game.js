@@ -1,6 +1,6 @@
 // Connect to server and inform of new player
 var socket = io();
-socket.emit('new player');
+socket.emit('join game');
 
 // Initiate controller and Renderer
 var controller = new Controller();
