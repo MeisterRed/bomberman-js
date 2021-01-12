@@ -1,10 +1,10 @@
-module.exports.Game = function(io, player_sockets, gameId) {
+module.exports.Game = function(io, clients, gameId) {
     var game = this;
     
     // initialize game state
     var state = {};
-    player_sockets.forEach(function(socket) {
-        state[socket.id] = {
+    clients.forEach(function(client) {
+        state[client.id] = {
             x: 420,
             y: 310
         };
@@ -20,7 +20,7 @@ module.exports.Game = function(io, player_sockets, gameId) {
 
 
     // ==== GAME EVENTS ====
-    GAME_EVENTS = ['player actions'];
+    GAME_EVENTS = ['player actions', 'disconnect'];
 
     game['player actions'] = function(socket, data) {
         var player = state[socket.id] || {};
@@ -38,10 +38,14 @@ module.exports.Game = function(io, player_sockets, gameId) {
         }
     }
 
-    player_sockets.forEach(function(socket) {
+    game['disconnect'] = function(socket, data) {
+        // TODO : kill player
+    }
+
+    clients.forEach(function(client) {
         GAME_EVENTS.forEach(function(event) {
-            socket.on(event, function(data) {
-                game[event](socket, data);
+            client.socket.on(event, function(data) {
+                game[event](client.socket, data);
             })
         })
     });

@@ -1,4 +1,5 @@
-const { Socket } = require('socket.io');
+const { Socket } = require('socket.io')
+const { Client } = require('./client');
 const { Game } = require('./game');
 
 //  The Lobby is where clients wait to be assigned a game.
@@ -6,22 +7,21 @@ const { Game } = require('./game');
 //  and periodically checks for enough players to initiate a game. 
 
 var Lobby = function(io) {
-    var lobby = this;
-    var clients    = {};       // maps socket.ids to Client objects
-    var games      = {};       // maps gameIds to Game objects
-    var queue      = [];       // qeueue of Clients waiting to play a game
-    var currGameId = 0;        // latest gameId
+    var lobby       = this;
+    var clients     = {};       // maps socket.ids to Client objects
+    var games       = {};       // maps gameIds to Game objects
+    var queue       = [];       // qeueue of Clients waiting to play a game
+    var currGameId  = 0;        // latest gameId
 
     // Constants
     var PLAYERS_PER_ROOM = 4;
-    var LOBBY_EVENTS = ['join game', 'disconnect']; // client messages that affect lobby
+    var LOBBY_EVENTS = ['join lobby', 'join game', 'disconnect', 'name player']; // client messages that affect lobby
 
     // ======== CONSTRUCTOR ======== //
     lobby.init = () => {
         // When a client connects, attach all lobby event handlers to the client socket
         io.on('connection', function(socket) {
             LOBBY_EVENTS.forEach(function(event) {
-                console.log(event);
                 socket.on(event, function(data) {
                     lobby[event](socket, data);
                 });
@@ -51,7 +51,7 @@ var Lobby = function(io) {
     lobby.startGame = (players) => {
         var gameId = lobby.generateGameId();
         players.forEach(function(client) {
-            client.join(gameId);
+            client.socket.join(gameId);
         });
         games[gameId] = new Game(io, players, gameId);
     }
@@ -74,15 +74,11 @@ var Lobby = function(io) {
 
     // ======== LOBBY EVENTS ======== //
     /**
-     * Adds the client to the clients object (if not present) and game queue
+     * Joins the client to the lobby
      * @param {Socket} socket Client socket
      */
-    lobby['join game'] = function(socket) {
-        if (!clients[socket.id]) {
-            clients[socket.id] = socket;
-        }
-        console.log("Socket #" + socket.id + " joined the game.")
-        queue.push(clients[socket.id]);
+    lobby['join lobby'] = function(socket) {
+        clients[socket.id] = new Client(socket);
     }
 
     /**
@@ -94,7 +90,23 @@ var Lobby = function(io) {
         delete clients[socket.id];
     }
 
-    // call constructor
+    /**
+     * 
+     * @param {*} socket
+     * @param {name: string} data the name to name the player
+     */
+    lobby['name player'] = function(socket, data) {
+        clients[socket.id].name = data.name;
+    }
+
+    /**
+     * Adds the client to the game queue
+     * @param {Socket} socket Client socket
+     */
+    lobby['join game'] = function(socket) {
+        queue.push(clients[socket.id]);
+    }
+
     this.init();
 }
 
