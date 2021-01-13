@@ -3,6 +3,7 @@ var express = require('express');
 var http = require('http');
 var path = require('path');
 var socketIO = require('socket.io');
+var HTTP_PORT = process.env.PORT || 5000
 const {Lobby} = require('./server/lobby');
 
 var app = express();
