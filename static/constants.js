@@ -1,14 +1,14 @@
-const PLAYER_ACTIONS_PER_SECOND = 1000/60;
+const PLAYER_ACTIONS_PER_SECOND = 1000/10;
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600
 const CANVAS = document.getElementById('canvas');
 
 // TODO : Consider keyMap customization
 const KEYMAP = {
-    'a': 'left',
-    'd': 'right',
-    's': 'down',
-    'w': 'up',
-    'z': 'bomb',
-    'x': 'kick'
+    'a': 1,     //LEFT
+    'd': 2,     //RIGHT
+    's': 3,     //DOWN
+    'w': 4,     //UP
+    'z': 5,     //BOMB
+    'x': 6      //KICK
 }
