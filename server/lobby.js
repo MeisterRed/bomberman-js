@@ -15,7 +15,7 @@ var Lobby = function(io) {
 
     // Constants
     var PLAYERS_PER_ROOM = 4;
-    var LOBBY_EVENTS = ['join lobby', 'join game', 'disconnect', 'name player']; // client messages that affect lobby
+    var LOBBY_EVENTS = ['join lobby', 'join game', 'disconnect', 'name player']; 
 
     // ======== CONSTRUCTOR ======== //
     lobby.init = () => {
@@ -46,14 +46,14 @@ var Lobby = function(io) {
 
     /**
      * Begins a game between the given player clients
-     * @param {Socket[]} players 
+     * @param {Client[]} players 
      */
     lobby.startGame = (players) => {
         var gameId = lobby.generateGameId();
         players.forEach(function(client) {
             client.socket.join(gameId);
         });
-        games[gameId] = new Game(io, players, gameId);
+        games[gameId] = new Game(io, gameId, players);
     }
 
     /**
