@@ -15,7 +15,7 @@ var Lobby = function(io) {
 
     // Constants
     var PLAYERS_PER_ROOM = 4;
-    var LOBBY_EVENTS = ['join lobby', 'join game', 'disconnect', 'name player']; // client messages that affect lobby
+    var LOBBY_EVENTS = ['join lobby', 'join game', 'disconnect', 'name player']; 
 
     // ======== CONSTRUCTOR ======== //
     lobby.init = () => {

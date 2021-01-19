@@ -4,7 +4,7 @@ module.exports.Game = function(io, gameId, clients) {
     var game = this;
 
     // The engine
-    var engine = new Engine(clients.map(client => client.socket.id));
+    var engine = new Engine(clients.map(client => client.id));
 
     this.init = function() {
         // Compute the physics step 30 times per second
