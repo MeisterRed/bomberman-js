@@ -1,24 +1,32 @@
-const { Socket } = require('socket.io')
+const { Socket } = require('socket.io');
 const { Client } = require('./client');
 const { Game } = require('./game');
+const { Room } = require('./room');
 
 //  The Lobby is where clients wait to be assigned a game.
 //  It maintains a queue of clients waiting for a game, 
 //  and periodically checks for enough players to initiate a game. 
 
-var Lobby = function(io) {
+module.exports.Lobby = function(io) {
     var lobby       = this;
     var clients     = {};       // maps socket.ids to Client objects
-    var games       = {};       // maps gameIds to Game objects
+    var rooms       = [];
     var queue       = [];       // qeueue of Clients waiting to play a game
     var currGameId  = 0;        // latest gameId
 
     // Constants
     var PLAYERS_PER_ROOM = 4;
-    var LOBBY_EVENTS = ['join lobby', 'join game', 'disconnect', 'name player']; 
+    var MAX_ROOMS = 80;
+    var LOBBY_EVENTS = ['join lobby', 'quickplay', 'disconnect', 'set name', 'create room',
+                        'join room']; 
 
     // ======== CONSTRUCTOR ======== //
     lobby.init = () => {
+        // Make the rooms
+        for (var i = 0; i < MAX_ROOMS; i++) {
+            rooms.push(new Room());
+        }
+
         // When a client connects, attach all lobby event handlers to the client socket
         io.on('connection', function(socket) {
             LOBBY_EVENTS.forEach(function(event) {
@@ -95,19 +103,18 @@ var Lobby = function(io) {
      * @param {*} socket
      * @param {name: string} data the name to name the player
      */
-    lobby['name player'] = function(socket, data) {
-        clients[socket.id].name = data.name;
+    lobby['set name'] = function(socket, data) {
+        clients[socket.id].setName(data.name);
     }
 
     /**
      * Adds the client to the game queue
      * @param {Socket} socket Client socket
      */
-    lobby['join game'] = function(socket) {
+    lobby['quickplay'] = function(socket) {
         queue.push(clients[socket.id]);
     }
 
     this.init();
 }
 
-module.exports.Lobby = Lobby;
