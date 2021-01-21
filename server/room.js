@@ -4,11 +4,13 @@ const { Game } = require('./game');
 
 //  The Room
 
-module.exports.Room = function(host) {
+module.exports.Room = function() {
     var room = this;
-    var clients = [];
-    var rules;
-    var chat;
+    this.roomId = "";
+    this.clients = [];
+    this.host = null;
+    this.rules = [];
+    this.chat = [];
 
     var PLAYERS_PER_ROOM = 4;
     var ROOM_EVENTS = ['set rules', 'start game', 'leave room', 'disconnect', 'chat']; 
@@ -48,4 +50,14 @@ module.exports.Room = function(host) {
         queue.push(clients[socket.id]);
     }
 
+}
+
+module.exports.Room.prototype.setHost = function(host) {
+    this.host = host;
+}
+
+module.exports.Room.prototype.init = function(host, id) {
+    this.setHost(host);
+    this.roomId = id;
+    this.clients.push(host);
 }

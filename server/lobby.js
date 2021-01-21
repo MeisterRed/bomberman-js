@@ -10,21 +10,24 @@ const { Room } = require('./room');
 module.exports.Lobby = function(io) {
     var lobby       = this;
     var clients     = {};       // maps socket.ids to Client objects
-    var rooms       = [];
-    var queue       = [];       // qeueue of Clients waiting to play a game
+    var rooms       = {};       // maps room ids to rooms
+    var emptyRooms  = [];
+    var usedRooms   = [];
+    var queue       = [];       // queue of Clients waiting to play a game
     var currGameId  = 0;        // latest gameId
 
     // Constants
-    var PLAYERS_PER_ROOM = 4;
-    var MAX_ROOMS = 80;
-    var LOBBY_EVENTS = ['join lobby', 'quickplay', 'disconnect', 'set name', 'create room',
+    const PLAYERS_PER_ROOM = 4;
+    const MAX_ROOMS = 80;
+    const LOBBY_EVENTS = ['connect', 'quickplay', 'disconnect', 'set name', 'create room',
                         'join room']; 
+    const ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     // ======== CONSTRUCTOR ======== //
     lobby.init = () => {
         // Make the rooms
         for (var i = 0; i < MAX_ROOMS; i++) {
-            rooms.push(new Room());
+            emptyRooms.push(new Room());
         }
 
         // When a client connects, attach all lobby event handlers to the client socket
@@ -71,6 +74,24 @@ module.exports.Lobby = function(io) {
         return "" + ++currGameId;
     }
 
+    /** 
+     * Generates unique Room ID
+    */
+    lobby.generateRoomId = function() {
+        var id = "";
+        var index = "";
+        
+        do {
+            id = "";
+            for (var i = 0; i < 6; i++) {
+                index = Math.floor(Math.random() * ALPHA.length);
+                id += ALPHA[index];
+            }
+        }
+        while (rooms[id]);
+        return id;
+    }
+
     /**
      * Finishes the game of the corresponding gameId
      * @param {string} gameId the gameId of the game to finish
@@ -85,7 +106,7 @@ module.exports.Lobby = function(io) {
      * Joins the client to the lobby
      * @param {Socket} socket Client socket
      */
-    lobby['join lobby'] = function(socket) {
+    lobby['connect'] = function(socket) {
         clients[socket.id] = new Client(socket);
     }
 
@@ -113,6 +134,31 @@ module.exports.Lobby = function(io) {
      */
     lobby['quickplay'] = function(socket) {
         queue.push(clients[socket.id]);
+    }
+
+    /**
+     * 
+     * @param {Socket} socket Client socket
+     */
+    lobby['create room'] = function(socket) {
+        // TO DO: Consider if the message is sent at the wrong time
+        var room = emptyRooms.pop();
+        if (!room) {
+            // TO DO: Tell client that room doesn't exist or something
+        }
+        else {
+            var id = this.generateRoomId();
+            room.init(clients[socket.id], id);
+            rooms[id] = room;
+            usedRooms.push(room);
+        }
+    }
+
+    /**
+     * 
+     */
+    lobby['join room'] = function(socket, id) {
+        
     }
 
     this.init();
