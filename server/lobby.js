@@ -55,25 +55,6 @@ module.exports.Lobby = function(io) {
         }
     }
 
-    /**
-     * Begins a game between the given player clients
-     * @param {Client[]} players 
-     */
-    lobby.startGame = (players) => {
-        var gameId = lobby.generateGameId();
-        players.forEach(function(client) {
-            client.socket.join(gameId);
-        });
-        games[gameId] = new Game(io, gameId, players);
-    }
-
-    /**
-     * Generates unique gameId
-     */
-    lobby.generateGameId = function() {
-        return "" + ++currGameId;
-    }
-
     /** 
      * Generates unique Room ID
     */
@@ -157,7 +138,12 @@ module.exports.Lobby = function(io) {
     /**
      * 
      */
-    lobby['join room'] = function(socket, id) {
+    lobby['join room'] = function(socket, roomId) {
+        try {
+            rooms[roomId].joinRoom(clients[socket.id]);
+        } catch (error) {
+            //ignore
+        }
         
     }
 
