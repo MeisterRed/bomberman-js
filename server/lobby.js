@@ -3,6 +3,13 @@ const { Client } = require('./client');
 const { Game } = require('./game');
 const { Room } = require('./room');
 
+ // Constants
+ const PLAYERS_PER_ROOM = 4;
+ const MAX_ROOMS = 80;
+ const LOBBY_EVENTS = ['connect', 'quickplay', 'disconnect', 'set name', 'create room',
+                     'join room']; 
+ const ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
 //  The Lobby is where clients wait to be assigned a game.
 //  It maintains a queue of clients waiting for a game, 
 //  and periodically checks for enough players to initiate a game. 
@@ -15,13 +22,6 @@ module.exports.Lobby = function(io) {
     var usedRooms   = [];
     var queue       = [];       // queue of Clients waiting to play a game
     var currGameId  = 0;        // latest gameId
-
-    // Constants
-    const PLAYERS_PER_ROOM = 4;
-    const MAX_ROOMS = 80;
-    const LOBBY_EVENTS = ['connect', 'quickplay', 'disconnect', 'set name', 'create room',
-                        'join room']; 
-    const ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     // ======== CONSTRUCTOR ======== //
     lobby.init = () => {
@@ -144,7 +144,6 @@ module.exports.Lobby = function(io) {
         } catch (error) {
             //ignore
         }
-        
     }
 
     this.init();

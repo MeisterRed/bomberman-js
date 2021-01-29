@@ -2,7 +2,10 @@ const { Socket } = require('socket.io')
 const { Client, Roles } = require('./client');
 const { Game } = require('./game');
 
-const ROOM_EVENTS = ['set rules', 'start game', 'leave room', 'disconnect', 'chat']; 
+// Constants
+
+const ROOM_EVENTS = ['disconnect', 'set rules', 'start game', 'leave room', 'chat']; 
+const MIN_PLAYERS_PER_ROOM = 2;
 
 //  The Room
 
@@ -36,16 +39,16 @@ module.exports.Room = function() {
     }
 
     /**
-     * Begins a game between the given player clients
+     * Begins the game
      * @param {Client[]} players 
      */
     room['start game'] = function(socket) {
-        if (this.clients.length > 1) {
+        if (playerCount >= MIN_PLAYERS_PER_ROOM) {
             var gameId = generateGameId();
             this.clients.forEach(function (client) {
                 client.socket.join(gameId);
             });
-            games[gameId] = new Game(io, gameId, players);
+            games[gameId] = new Game(io, gameId, this.clients);
         }
     }
 
@@ -93,6 +96,7 @@ module.exports.Room.prototype.joinRoom = function(client) {
     this.clients[client.id] = client;
     client.socket.join(this.roomId);
 
+    // Set client's role unless they're the host
     if (client.role === Roles.HOST) {
         //Do Nothing
     }
@@ -108,11 +112,11 @@ module.exports.Room.prototype.joinRoom = function(client) {
     //Add event callbacks
     room.clientEventCallbacks[client.id] = {};
     ROOM_EVENTS.forEach(function(event) {
-        let functionCallback = function(event) {
+        let callback = function(event) {
             room[event](client.socket, data);
         }
-        client.socket.on(event, functionCallback);
-        room.clientEventCallbacks[client.id][event] = functionCallback;
+        client.socket.on(event, callback);
+        room.clientEventCallbacks[client.id][event] = callback;
     })
 }
 
@@ -134,8 +138,6 @@ module.exports.Room.prototype.leaveRoom = function(client) {
     client.socket.leave(this.roomId);
     delete room.clientEventCallbacks[client.id]
     delete clients[client.id];
-
-    
 }
 
 module.exports.Room.prototype.init = function(host, id) {
