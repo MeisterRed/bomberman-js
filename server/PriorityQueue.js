@@ -13,10 +13,12 @@ function Abstract (comparator) {
 	if (comparator.length !== 2 || (typeof comparator()) != 'number')
 		throw new Error("Comparator callback must have 2 parameters and return a number");
 
-	this.compare = comparator;
+	// ========= private instance fields =========
+	this._compare = comparator;
+	this._elements = [];
 };
 Abstract.prototype = {
-	// ======== stubs =========
+	// ======== interface =========
 	add: function(element, priority) {
 		throw new Error("A priority queue must implement the 'add' method");
 	},
@@ -41,16 +43,21 @@ Abstract.prototype = {
 	constructor: Abstract,  // mitigates 'this' weirdness
 
 	compare: function(a, b) {
-		if (constructor.hasOwnProperty("compare")) {
+		if (typeof a.priority != 'undefined' && typeof b.priority != 'undefined') {
 			if (a.priority < b.priority)
 				return -1;
-			else if (a.priority > b.priority)
+			if (a.priority > b.priority)
 				return 1;
-			else
-				return constructor.compare(a,b);
 		}
-		else
-			throw new Error("A priority queue must implement the 'compare' method");
+		return constructor._compare(a.element,b.element);
+	},
+
+	// ======== private inherited ============
+	_packageElement: function(element /* , priority */) {
+		var obj = {};
+		obj.element = element;
+		obj.priority = arguments[1] || undefined;
+		return obj;
 	}
 };
 
@@ -68,12 +75,10 @@ Abstract.prototype = {
 function Array(comparator) {
 	Abstract.call(this, comparator);
 
-	// ========= private members ===========
-	var _self = this;
-	var _elements = [];
+	var self = this;
 
 	// ========= private functions =========
-	function internal_sort() {
+	function _sort() {
 		return _elements.sort(this.compare);
 	}
 
@@ -85,7 +90,7 @@ function Array(comparator) {
 	 	    2.	Returns array with one element if bounds are the same.
 		    3.	Returns 'undefined' if miss.
 	*/
-	function internal_search(key) {
+	function _search(key) {
 		// [ 0, 0, 1, 2, 3, 4, 4, 4, 4, 5 ]
 		var stage = function(key, start, end /* , callback */) {
 			var callback = arguments[3];    // 'arguments' array is built-in
@@ -149,13 +154,14 @@ function Array(comparator) {
 
 
 	// ========== public functions ============
-	_self.add = function(element, priority) {
-		_elements.push({ element, priority });
-		internal_sort();
+	self.add = function(element, priority) {
+		var packaged = this._packageElement();
+		self._elements.push(packaged);
+		_sort();
 	}
 
-	_self.remove = function(element) {
-		var found = internal_search(element);
+	self.remove = function(element) {
+		var found = _search(element);
 		var len = (found.length === 1 ? 1 : found[1]-found[0]+1);
 		var removed = _elements.slice(found, len);
 		if (found !== undefined)
@@ -164,11 +170,11 @@ function Array(comparator) {
 		return removed;
 	}
 
-	_self.getTop = function() {
+	self.getTop = function() {
 		return _elements[0];
 	}
 
-	_self.get = function(key) {
+	self.get = function(key) {
 		var hits = search(key);
 		if (hits === undefined)
 			return undefined;
@@ -181,7 +187,7 @@ function Array(comparator) {
 		return arr;
 	}
 
-	_self.toString = function() {
+	self.toString = function() {
 		var str = "{";
 		for (let i = 0 ; i < _elements.length ; i++) {
 			str += "{element: "+e.element+", priority: "+e.priority+"}";
@@ -192,7 +198,7 @@ function Array(comparator) {
 		return str;
 	}
 
-	_self.size = (function() {
+	self.size = (function() {
 		return _elements.length;
 	})();
 };
@@ -222,3 +228,6 @@ Heap.prototype.constructor = Heap;
 
 
 module.exports = { Abstract: Abstract, Array: Array, Heap: Heap };
+
+
+
