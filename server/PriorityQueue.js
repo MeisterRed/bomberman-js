@@ -31,41 +31,48 @@ PriorityQueue.prototype._compare = function(a, b) {
         return result;
 };
 
-PriorityQueue.prototype._sink = function(index) {
-        const me = this._elements[index];
-        var childIndex;
-        while (index <= this._size) {
-                childIndex = index*2;
-                if (childIndex < this._size && 
-                        this._compare(this._elements[childIndex].priority, 
-                        this._elements[childIndex+1].priority) < 0) {
-                        childIndex += 1;   // pick the larger child
+PriorityQueue.prototype._sink = function(slot) {
+        function swap(objA, objB) {
+                var tmp = objA;
+                objA = objB;
+                objB = tmp;
+        }
+
+        var childSlot;
+        while (slot <= this._size) {
+                childSlot = slot*2;
+                if (childSlot < this._size && 
+                        this._compare(this._elements[childSlot].priority, 
+                        this._elements[childSlot+1].priority) < 0) {
+                        childSlot += 1;   // pick the larger child
                 }
-                if (this._elements[childIndex].priority <= me.priority) {
+                if (this._compare(this._elements[slot], 
+                        this._elements[childSlot]) >= 0) {
                         break;
                 }
-                this._elements[childIndex] = me;
-                index = childIndex;
+                swap(this._elements[slot], this._elements[childSlot]);
         }
-        this._elements[index] = me;
-        return index;
+        return slot;
 };
 
-PriorityQueue.prototype._swim = function(index) {
+PriorityQueue.prototype._swim = function(slot) {
+        function swap(objA, objB) {
+                var tmp = objA;
+                objA = objB;
+                objB = tmp;
+        }
+
         const root = 1;
-        const me = this._elements[index];
-        var parentIndex;
-        while (index > root) {
-                parentIndex = Math.floor(index/2);
-                if (this._compare(me.priority, 
-                        this._elements[parentIndex].priority) <= 0) {
+        var parentSlot;
+        while (slot > root) {
+                parentSlot = Math.floor(slot/2);
+                if (this._compare(this._elements[slot].priority, 
+                        this._elements[parentSlot].priority) <= 0) {
                         break;
                 }
-                this._elements[index] = this._elements[parentIndex];
-                index = parentIndex;
+                swap(this._elements[slot], this._elements[childSlot]);
         }
-        this._elements[index] = me;
-        return index;
+        return slot;
 };
 
 PriorityQueue.prototype._isValidSlot = function(slot) {
@@ -75,45 +82,44 @@ PriorityQueue.prototype._isValidSlot = function(slot) {
 PriorityQueue.prototype.find = function(element) {
         var match = undefined;
         var queue = [];
-        var index = 1;
-        queue.push(this._elements[index]);
+        var slot = 1;
+        queue.push(this._elements[slot]);
         while (queue.length > 0) {
                 // visit parent
-                index = queue.splice(0, 1);    // remove parent
-                if (this._compare(this._elements[index].element, element) === 0) {
-                        match = index;
+                slot = queue.splice(0, 1);    // remove parent
+                if (this._compare(this._elements[slot].element, element) === 0) {
+                        match = this._elements[slot];
                         break;
                 }
                 // add children
-                var childIndex = index * 2;
-                if (childIndex < this._size && this._elements[childIndex] !== undefined)
-                        queue.push(this._elements[childIndex]);
-                if (childIndex+1 < this._size && this._elements[childIndex+1] !== undefined)
-                        queue.push(this._elements[childIndex + 1]);
+                var childSlot = slot * 2;
+                if (childSlot < this._size && this._elements[childSlot] !== undefined)
+                        queue.push(this._elements[childSlot]);
+                if (childSlot+1 < this._size && this._elements[childSlot+1] !== undefined)
+                        queue.push(this._elements[childSlot + 1]);
         }
         return match;
 };
 
 PriorityQueue.prototype.add = function(element, priority) {
-        var obj = { element: element, priority: priority };
+        var obj = {};
+        obj.element = element;
+        obj.priority = priority;
         this._elements[++this._size] = obj;
-        var slot = this._swim(this._size);
-        return slot;
+        obj.slot = this._swim(this._size);
+        return obj;
 };
 
 PriorityQueue.prototype.remove = function(id) {
+        id = id.slot;
         if (this._size < 1)
                 return;
         if (!this._isValidSlot(id))
                 throw new TypeError("'id' must be a valid handle");
         
         this._elements[id] = undefined;
-        this._size -= 1;        // CONSIDER: before or after _sink()?
         this._sink(id);
-};
-
-PriorityQueue.prototype.removeMax = function() {
-        return this.remove(1);
+        this._size -= 1;
 };
 
 PriorityQueue.prototype.getMax = function() {
@@ -121,22 +127,23 @@ PriorityQueue.prototype.getMax = function() {
 };
 
 PriorityQueue.prototype.getElement = function(id) {
-        if (this._isValidSlot(id))
-                return this._elements[id].element;
-        return undefined;
+        id = id.slot;
+        if (!this._isValidSlot(id))
+                return undefined;
+        return this._elements[id].element;
 };
 
 PriorityQueue.prototype.changePriority = function(id, newPriority) {
+        var obj = id;
+        id = id.slot;
         if (!this._isValidSlot(id))
                 throw new TypeError("'slot' must be a valid handle");
         
         var current = this._elements[id];
         if (newPriority > current.priority)
-                id = this._swim(id);
+                obj.slot = this._swim(id);
         else if (newPriority < current.priority)
-                id = this._sink(id);
-
-        return id;
+                obj.slot = this._sink(id);
 };
 
 PriorityQueue.prototype.isEmpty = function() {
