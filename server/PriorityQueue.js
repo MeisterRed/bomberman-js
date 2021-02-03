@@ -24,7 +24,7 @@ PriorityQueue.prototype._compare = function(a, b) {
         else if (a.priority > b.priority || b.priority === undefined)
                 result = 1;
         else {
-                var result = this._comparator(a.element, b.element);
+                result = this._comparator(a.element, b.element);
                 if (typeof result !== 'number')
                         throw new TypeError("Comparator callback return an integer");
         }
@@ -95,21 +95,21 @@ PriorityQueue.prototype.find = function(element) {
 };
 
 PriorityQueue.prototype.add = function(element, priority) {
-        var obj = { element: element, priority: priority, slot: undefined };
+        var obj = { element: element, priority: priority };
         this._elements[++this._size] = obj;
-        obj.slot = this._swim(this._size);
-        return obj.slot;
+        var slot = this._swim(this._size);
+        return slot;
 };
 
-PriorityQueue.prototype.remove = function(slot) {
+PriorityQueue.prototype.remove = function(id) {
         if (this._size < 1)
                 return;
-        if (!this._isValidSlot(slot))
-                throw new TypeError("'slot' must be a valid handle");
+        if (!this._isValidSlot(id))
+                throw new TypeError("'id' must be a valid handle");
         
-        this._elements[slot] = undefined;
-        this._size -= 1;
-        this._sink(slot);
+        this._elements[id] = undefined;
+        this._size -= 1;        // CONSIDER: before or after _sink()?
+        this._sink(id);
 };
 
 PriorityQueue.prototype.removeMax = function() {
@@ -117,20 +117,26 @@ PriorityQueue.prototype.removeMax = function() {
 };
 
 PriorityQueue.prototype.getMax = function() {
-        return 1;
+        return this.getElement(1);
 };
 
-PriorityQueue.prototype.changePriority = function(slot, newPriority) {
-        if (!this._isValidSlot(slot))
+PriorityQueue.prototype.getElement = function(id) {
+        if (this._isValidSlot(id))
+                return this._elements[id].element;
+        return undefined;
+};
+
+PriorityQueue.prototype.changePriority = function(id, newPriority) {
+        if (!this._isValidSlot(id))
                 throw new TypeError("'slot' must be a valid handle");
         
-        var current = this._elements[slot];
+        var current = this._elements[id];
         if (newPriority > current.priority)
-                current.slot = this._swim(slot);
+                id = this._swim(id);
         else if (newPriority < current.priority)
-                current.slot = this._sink(slot);
+                id = this._sink(id);
 
-        return current.slot;
+        return id;
 };
 
 PriorityQueue.prototype.isEmpty = function() {
