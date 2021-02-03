@@ -9,7 +9,7 @@ module.exports.Client = function(socket) {
     this.socket = socket;
     this.name = '';
     this.id = socket.id;
-    this.role = Roles.NONE;
+    this.role = module.exports.Roles.NONE;
 }
 
 module.exports.Client.prototype.setName = function(name) { 

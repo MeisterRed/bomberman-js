@@ -4,12 +4,12 @@ const { Game } = require('./game');
 
 // Constants
 
-const ROOM_EVENTS = ['disconnect', 'set rules', 'start game', 'leave room', 'chat']; 
+const ROOM_EVENTS = ['set rules', 'start game', 'leave room', 'chat']; 
 const MIN_PLAYERS_PER_ROOM = 2;
 
 //  The Room
 
-module.exports.Room = function() {
+module.exports.Room = function(io) {
     var room = this;
     this.roomId = "";
     this.clients = {};
@@ -19,6 +19,7 @@ module.exports.Room = function() {
     this.chat = [];
     this.playerCount = 0;
     this.spectatorCount = 0;
+    this.game = null;
 
     var PLAYERS_PER_ROOM = 4;
     var SPECTATORS_PER_ROOM = 20;
@@ -31,6 +32,8 @@ module.exports.Room = function() {
      */
     room['disconnect'] = function(socket) {
         // TODO : remove  client from the queue
+        console.log("Bye bye room")
+        socket.leave(room.roomId);
         delete clients[socket.id];
     }
 
@@ -43,12 +46,14 @@ module.exports.Room = function() {
      * @param {Client[]} players 
      */
     room['start game'] = function(socket) {
-        if (playerCount >= MIN_PLAYERS_PER_ROOM) {
-            var gameId = generateGameId();
-            this.clients.forEach(function (client) {
+        if (room.playerCount >= MIN_PLAYERS_PER_ROOM) {
+            var gameId = room.generateGameId();
+            Object.values(room.clients).forEach(function (client) {
                 client.socket.join(gameId);
             });
-            games[gameId] = new Game(io, gameId, this.clients);
+            room.game = new Game(io, gameId, room.clients);
+        } else {
+            console.log("Not enough players!");
         }
     }
 
@@ -83,7 +88,7 @@ module.exports.Room = function() {
 }
 
 module.exports.Room.prototype.generateGameId = function() {
-    return "" + (++currGameId);
+    return "" + (++this.currGameId);
 }
 
 module.exports.Room.prototype.setHost = function(host) {
@@ -92,15 +97,15 @@ module.exports.Room.prototype.setHost = function(host) {
 }
 
 module.exports.Room.prototype.joinRoom = function(client) {
-    let room = this;
+    console.log('Adding client to room : ', client.name + " (" + client.role + ")");
     this.clients[client.id] = client;
     client.socket.join(this.roomId);
 
     // Set client's role unless they're the host
     if (client.role === Roles.HOST) {
-        //Do Nothing
+        this.playerCount++;
     }
-    else if (this.playerCount !== PLAYERS_PER_ROOM) {
+    else if (this.playerCount !== MIN_PLAYERS_PER_ROOM) {
         client.setRole(Roles.PLAYER);
         this.playerCount++;
     }
@@ -110,14 +115,16 @@ module.exports.Room.prototype.joinRoom = function(client) {
     }
 
     //Add event callbacks
+    let room = this;
     room.clientEventCallbacks[client.id] = {};
     ROOM_EVENTS.forEach(function(event) {
-        let callback = function(event) {
+        let callback = function(socket, data) {
+            console.log("calling : ", event, " for client " + client.socket.name);
             room[event](client.socket, data);
         }
         client.socket.on(event, callback);
         room.clientEventCallbacks[client.id][event] = callback;
-    })
+    });
 }
 
 module.exports.Room.prototype.leaveRoom = function(client) {
@@ -141,7 +148,17 @@ module.exports.Room.prototype.leaveRoom = function(client) {
 }
 
 module.exports.Room.prototype.init = function(host, id) {
+    console.log("Initializing room with id : ", id);
     this.setHost(host);
     this.roomId = id;
     this.joinRoom(host);
+}
+
+module.exports.Room.prototype.getFrontendFormat = function() {
+    return {
+        id: this.roomId,
+        playerCount: this.playerCount,
+        spectatorCount: this.spectatorCount,
+        host: this.host.name,
+    }
 }

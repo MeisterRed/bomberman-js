@@ -3,12 +3,20 @@ const { Client } = require('./client');
 const { Game } = require('./game');
 const { Room } = require('./room');
 
- // Constants
- const PLAYERS_PER_ROOM = 4;
- const MAX_ROOMS = 80;
- const LOBBY_EVENTS = ['connect', 'quickplay', 'disconnect', 'set name', 'create room',
-                     'join room']; 
- const ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+// Constants
+const LOBBY = 'LOBBY';
+const LOBBY_EVENTS = [
+    'join lobby', 'set name', 'quickplay',
+    'create room', 'join room', 'see rooms',
+    'disconnect'
+]; 
+const PLAYERS_PER_ROOM = 4;
+const MAX_ROOMS = 80;
+const QUEUE_CHECK_MS = 1_000;
+const EMIT_ROOM_DATA_MS = 5_000;
+const ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+
 
 //  The Lobby is where clients wait to be assigned a game.
 //  It maintains a queue of clients waiting for a game, 
@@ -27,7 +35,7 @@ module.exports.Lobby = function(io) {
     lobby.init = () => {
         // Make the rooms
         for (var i = 0; i < MAX_ROOMS; i++) {
-            emptyRooms.push(new Room());
+            emptyRooms.push(new Room(io));
         }
 
         // When a client connects, attach all lobby event handlers to the client socket
@@ -38,8 +46,14 @@ module.exports.Lobby = function(io) {
                 });
             });
         });
+
         // Check the client queue every second to initiate new games
-        setInterval(lobby.checkClientQueue, 1000);
+        setInterval(lobby.checkClientQueue, QUEUE_CHECK_MS);
+
+        // Emit room data every
+        setInterval(function() {
+            lobby.emitRoomData(LOBBY);
+        }, EMIT_ROOM_DATA_MS);
     }
 
     // ======== METHODS ======== //
@@ -82,13 +96,27 @@ module.exports.Lobby = function(io) {
         delete games[gameId];
     }
 
+    /**
+     * Give clients updated room list
+     * @param {string} recipient should either be 'LOBBY' or a specific client id
+     */
+    lobby.emitRoomData = function(recipient) {
+        var roomData = Object.keys(rooms).map(function(roomId) {
+            return rooms[roomId].getFrontendFormat();
+        });
+        io.to(recipient).emit('room data', {
+            rooms: roomData
+        });
+    }
+
     // ======== LOBBY EVENTS ======== //
     /**
      * Joins the client to the lobby
      * @param {Socket} socket Client socket
      */
-    lobby['connect'] = function(socket) {
+    lobby['join lobby'] = function(socket) {
         clients[socket.id] = new Client(socket);
+        socket.join(LOBBY);
     }
 
     /**
@@ -97,23 +125,26 @@ module.exports.Lobby = function(io) {
      */
     lobby['disconnect'] = function(socket) {
         // TODO : remove  client from the queue
+        console.log("Bye bye lobby");
+        socket.leave(LOBBY)
         delete clients[socket.id];
     }
 
     /**
      * 
      * @param {*} socket
-     * @param {name: string} data the name to name the player
+     * @param {string} name the name to name the player
      */
-    lobby['set name'] = function(socket, data) {
-        clients[socket.id].setName(data.name);
-    }
+    lobby['set name'] = function(socket, name) {
+        clients[socket.id].setName(name);
+    }   
 
     /**
      * Adds the client to the game queue
      * @param {Socket} socket Client socket
      */
     lobby['quickplay'] = function(socket) {
+        console.log("quickplay called");
         queue.push(clients[socket.id]);
     }
 
@@ -122,6 +153,7 @@ module.exports.Lobby = function(io) {
      * @param {Socket} socket Client socket
      */
     lobby['create room'] = function(socket) {
+        console.log("Creating room");
         // TO DO: Consider if the message is sent at the wrong time
         var room = emptyRooms.pop();
         if (!room) {
@@ -131,19 +163,28 @@ module.exports.Lobby = function(io) {
             var id = this.generateRoomId();
             room.init(clients[socket.id], id);
             rooms[id] = room;
+            console.log("This is what the room is : ", room.getFrontendFormat());
             usedRooms.push(room);
         }
     }
 
     /**
      * 
+     * @param {Socket} socket Client socket
+     * @param {string} roomId ID of room to join
      */
     lobby['join room'] = function(socket, roomId) {
         try {
             rooms[roomId].joinRoom(clients[socket.id]);
         } catch (error) {
             //ignore
+            console.log("Error when joining room : ", error);
         }
+    }
+
+
+    lobby['see rooms'] = function (socket) {
+        lobby.emitRoomData(socket.id);
     }
 
     this.init();
