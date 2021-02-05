@@ -27,3 +27,8 @@ var joinRoom = function (roomId) {
 var seeRooms = function () {
     socket.emit('see rooms');
 }
+
+// TEST FN
+var joinFirstRoom = function () {
+    joinRoom(rooms[0].id);
+}

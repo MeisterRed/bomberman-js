@@ -4,8 +4,10 @@ const { Game } = require('./game');
 
 // Constants
 
-const ROOM_EVENTS = ['set rules', 'start game', 'leave room', 'chat']; 
+const ROOM_EVENTS = ['set rules', 'start game', 'leave room', 'chat', 'kick out', 'swap roles']; 
 const MIN_PLAYERS_PER_ROOM = 2;
+const MAX_PLAYERS_PER_ROOM = 4;
+const MAX_SPECTATORS_PER_ROOM = 20;
 
 //  The Room
 
@@ -20,9 +22,6 @@ module.exports.Room = function(io) {
     this.playerCount = 0;
     this.spectatorCount = 0;
     this.game = null;
-
-    var PLAYERS_PER_ROOM = 4;
-    var SPECTATORS_PER_ROOM = 20;
 
     // ======== ROOM EVENTS ======== //
 
@@ -58,15 +57,15 @@ module.exports.Room = function(io) {
     }
 
     room['leave room'] = function(socket) {
-        this.leaveRoom(this.client[socket.id]);
+        this.leaveRoom(this.clients[socket.id]);
     }
 
     room['chat'] = function(socket) {
         
     }
 
-    room['kick out'] = function(socket, data) {
-        this.clients[data.id].emit("kicked out");
+    room['kick out'] = function(socket, playerId) {
+        this.clients[playerId].emit("kicked out");
         this.leaveRoom(this.client[data.id]);
     }
 
@@ -78,7 +77,7 @@ module.exports.Room = function(io) {
             this.spectatorCount++;
             this.playerCount--;
         }
-        else if (client.role === Roles.SPECTATOR && this.playerCount < PLAYERS_PER_ROOM) {
+        else if (client.role === Roles.SPECTATOR && this.playerCount < MAX_PLAYERS_PER_ROOM) {
             client.role = Roles.PLAYER;
             this.playerCount++;
             this.spectatorCount--;
@@ -97,7 +96,6 @@ module.exports.Room.prototype.setHost = function(host) {
 }
 
 module.exports.Room.prototype.joinRoom = function(client) {
-    console.log('Adding client to room : ', client.name + " (" + client.role + ")");
     this.clients[client.id] = client;
     client.socket.join(this.roomId);
 
@@ -105,7 +103,7 @@ module.exports.Room.prototype.joinRoom = function(client) {
     if (client.role === Roles.HOST) {
         this.playerCount++;
     }
-    else if (this.playerCount !== MIN_PLAYERS_PER_ROOM) {
+    else if (this.playerCount < MAX_PLAYERS_PER_ROOM) {
         client.setRole(Roles.PLAYER);
         this.playerCount++;
     }
@@ -113,6 +111,8 @@ module.exports.Room.prototype.joinRoom = function(client) {
         client.setRole(Roles.SPECTATOR);
         this.spectatorCount++;
     }
+
+    console.log('Added client to room : ', client.name + " (" + client.role + ")");
 
     //Add event callbacks
     let room = this;

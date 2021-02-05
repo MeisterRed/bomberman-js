@@ -11,5 +11,13 @@ var leaveRoom = function() {
 }
 
 var sendChat = function() {
-    socket.emit('chat')
+    socket.emit('chat');
+}
+
+var kickOut = function(playerId) {
+    socket.emit('kick out', playerId);
+}
+
+var swapRoles = function() {
+    socket.emit('swap roles');
 }

@@ -101,12 +101,8 @@ module.exports.Lobby = function(io) {
      * @param {string} recipient should either be 'LOBBY' or a specific client id
      */
     lobby.emitRoomData = function(recipient) {
-        var roomData = Object.keys(rooms).map(function(roomId) {
-            return rooms[roomId].getFrontendFormat();
-        });
-        io.to(recipient).emit('room data', {
-            rooms: roomData
-        });
+        var roomData = Object.values(rooms).map(room => room.getFrontendFormat());
+        io.to(recipient).emit('room data', roomData);
     }
 
     // ======== LOBBY EVENTS ======== //
