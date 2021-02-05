@@ -119,7 +119,7 @@ module.exports.Room.prototype.joinRoom = function(client) {
     room.clientEventCallbacks[client.id] = {};
     ROOM_EVENTS.forEach(function(event) {
         let callback = function(socket, data) {
-            console.log("calling : ", event, " for client " + client.socket.name);
+            console.log("calling : ", event, " for client " + client.name);
             room[event](client.socket, data);
         }
         client.socket.on(event, callback);
@@ -141,10 +141,10 @@ module.exports.Room.prototype.leaveRoom = function(client) {
     else if(client.role === Roles.SPECTATOR) {
         this.spectatorCount--;
     }
-    client.setRole(roles.NONE);
+    client.setRole(Roles.NONE);
     client.socket.leave(this.roomId);
     delete room.clientEventCallbacks[client.id]
-    delete clients[client.id];
+    delete room.clients[client.id];
 }
 
 module.exports.Room.prototype.init = function(host, id) {
