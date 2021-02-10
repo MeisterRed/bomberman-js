@@ -1,0 +1,39 @@
+Button {
+    width: 135px;
+    height: 43px;
+}
+
+#players {
+    position: absolute;
+    width: 152px;
+    height: 33px;
+    left: 136px;
+    top: 73px;
+}
+#spectators {
+    position: absolute;
+    width: 152px;
+    height: 33px;
+    left: 114px;
+    top: 222px;
+}
+
+#rules {
+    position: absolute;
+    width: 152px;
+    height: 33px;
+    left: 1278px;
+    top: 73px;
+}
+
+#ready {
+    position: absolute;
+    left: 1185px;
+    top: 512px;
+}
+
+#leaveroom {
+    position: absolute;
+    left: 1185px;
+    top: 572px;
+}

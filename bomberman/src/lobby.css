@@ -1,0 +1,61 @@
+Button {
+    width: 135px;
+    height: 43px;
+}
+
+p {
+    position:absolute;
+}
+
+#tutorial1 {
+    position: absolute;
+    width: 152px;
+    height: 33px;
+    left: 106px;
+    top: 73px;
+}
+
+#tutorial2 {
+    top: 125px;
+    left: 84px;
+}
+
+#tutorial3 {
+    top: 174px;
+    left: 84px;
+}
+
+
+
+#roomlist {
+    position: absolute;
+    width: 152px;
+    height: 33px;
+    left: 1278px;
+    top: 73px;
+}
+
+#createroom {
+    position: absolute;
+    left: 1185px;
+    top: 452px;
+}
+
+
+#quickplay {
+    position: absolute;
+    left: 1185px;
+    top: 512px;
+}
+
+#changename {
+    position: absolute;
+    left: 1185px;
+    top: 572px;
+}
+
+#playername {
+    position: absolute;
+    left: 1340px;
+    top: 580px;
+}
