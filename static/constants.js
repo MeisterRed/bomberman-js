@@ -12,3 +12,4 @@ const KEYMAP = {
     'w': 4,     //UP
     'z': 5,     //BOMB
     'x': 6      //KICK
+};

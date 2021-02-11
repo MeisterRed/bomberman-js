@@ -1,19 +1,22 @@
-const {Engine} = require('./engine/Engine')
+const { Engine }            = require('./engine/Engine')
+const { Client, Roles }     = require('./client');
+
+// Constants 
+GAME_EVENTS = ['player actions', 'disconnect'];
 
 module.exports.Game = function(io, gameId, clients) {
     var game = this;
+    this.players    = Object.values(clients).filter(c => c.role === Roles.PLAYER || c.role === Roles.HOST);
+    this.spectators = Object.values(clients).filter(c => c.role === Roles.SPECTATOR);
+    this.clientEventCallbacks = {};
 
     // The engine
-    var engine = new Engine(clients.map(client => client.id));
+    var engine = new Engine(this.players.map(client => client.id));
 
     this.init = function() {
-        // Compute the physics step 30 times per second
+        // Game Loop
         setInterval(function() {
             engine.step();
-        }, 1000 / 30);
-
-        // Emit state to clients 30 times per second
-        setInterval(function() {
             io.to(gameId).emit('state', engine.getState());
         }, 1000 / 30);
     }
@@ -24,24 +27,10 @@ module.exports.Game = function(io, gameId, clients) {
 
 
     // ==== GAME EVENTS ====
-    GAME_EVENTS = ['player actions', 'disconnect'];
-
+    
     // When a player emits their actions, update their state
     game['player actions'] = function(socket, data) {
-        let vx = 0, vy = 0;
-        if (data[1] === '1') {
-            vx = -4;
-        }
-        else if (data[2] === '1') {
-            vx = 4
-        }
-        if (data[3] === '1') {
-            vy = 4;
-        }
-        else if (data[4] === '1') {
-            vy = -4;
-        }
-        engine.setPlayerVelocity(socket.id, vx, vy);
+        engine.handleInput(socket.id, data);
     }
 
     // When a player disconnects, 
@@ -49,12 +38,16 @@ module.exports.Game = function(io, gameId, clients) {
         // TODO : if the player is alive, kill them
     }
 
-    clients.forEach(function(client) {
+    // Add game events for each player
+    this.players.forEach(function(client) {
+        game.clientEventCallbacks[client.id] = {};
         GAME_EVENTS.forEach(function(event) {
-            client.socket.on(event, function(data) {
+            let callback = function(data) {
                 game[event](client.socket, data);
-            })
-        })
+            }
+            client.socket.on(event, callback);
+            game.clientEventCallbacks[client.id][event] = callback;
+        });
     });
 
     this.init();

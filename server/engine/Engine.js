@@ -1,6 +1,6 @@
-const {Solver} = require('./Solver');
-const {CollisionDetector} = require('./CollisionDetector');
-const {PhysicsEntity, EntityType} = require('./PhysicsEntity');
+const { Solver } = require('./Solver');
+const { CollisionDetector } = require('./CollisionDetector');
+const { PhysicsEntity, EntityType } = require('./PhysicsEntity');
 
 /**
  * 
@@ -26,7 +26,6 @@ var Engine = function(playerIds) {
     }
 
     // Make some blocks
-    var rand = 1;
     for(var rand = 1; rand > 0.2; rand = Math.random()) {
         let collidable = new PhysicsEntity();
         collidable.setPos(Math.random() * 800, Math.random() * 600);
@@ -57,7 +56,7 @@ Engine.prototype.step = function() {
     var entities = this.entities;
 
     // Update position / velocity on all movable entities
-    for (var i = 0, length = entities.length; i < length; i++) {
+    for (let i = 0, length = entities.length; i < length; i++) {
         entity = entities[i];
         switch (entity.type) {
             case EntityType.KINEMATIC:
@@ -71,7 +70,7 @@ Engine.prototype.step = function() {
         }
     }
 
-    for (var i = 0, length = this.playerIds.length; i < length; i++) {
+    for (let i = 0, length = this.playerIds.length; i < length; i++) {
         let player = this.players[this.playerIds[i]];
         let collisions = this.collider.detectCollisions(player, this.collidables);
         if (collisions) {
@@ -91,6 +90,23 @@ Engine.prototype.getState = function() {
         players: this.players,
         blocks: this.collidables
     }
+}
+
+Engine.prototype.handleInput = function(playerId, data) {
+    let vx = 0, vy = 0;
+    if (data[1] === '1') {
+        vx = -4;
+    }
+    else if (data[2] === '1') {
+        vx = 4
+    }
+    if (data[3] === '1') {
+        vy = 4;
+    }
+    else if (data[4] === '1') {
+        vy = -4;
+    }
+    this.setPlayerVelocity(playerId, vx, vy);
 }
 
 module.exports.Engine = Engine;
